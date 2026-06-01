@@ -8,7 +8,7 @@ import ViewCounter from "@/components/ViewCounter";
 
 export default async function PublikasiDetailPage({ params }) {
   const { category, id } = await params;
-  const { userId } = auth();
+  const { userId } = await auth();
   const isAdmin = !!userId;
 
   // Validate category

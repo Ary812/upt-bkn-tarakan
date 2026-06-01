@@ -65,7 +65,8 @@ export async function uploadImageAction(formData) {
     throw new Error("Only image files are allowed");
   }
 
-  const fileExt = file.name.split('.').pop()?.toLowerCase();
+  const fileNameProperty = file.name || "image.jpeg";
+  const fileExt = fileNameProperty.split('.').pop()?.toLowerCase() || 'jpeg';
   if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fileExt)) {
      throw new Error("Invalid image format");
   }
