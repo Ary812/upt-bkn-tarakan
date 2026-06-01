@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/supabase";
-import DOMPurify from "isomorphic-dompurify";
 
 export const revalidate = 0;
 
@@ -26,7 +25,7 @@ export default async function LayananPage() {
           {data ? (
             <div 
               className="sun-editor-editable transition-all relative z-10"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.content) }}
+              dangerouslySetInnerHTML={{ __html: data.content }}
             />
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-12 relative z-10">

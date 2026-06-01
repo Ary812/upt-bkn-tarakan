@@ -56,7 +56,7 @@ export async function uploadImageAction(formData) {
   await requireAdmin();
 
   const file = formData.get("file");
-  if (!file || !(file instanceof File)) {
+  if (!file || typeof file !== "object" || !('name' in file)) {
     throw new Error("File not found or invalid");
   }
 
