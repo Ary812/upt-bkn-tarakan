@@ -5,6 +5,7 @@ import gsap from "gsap";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ExternalLink, Menu, X, Building2 } from "lucide-react";
+import Image from "next/image";
 import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 
 export default function Header() {
@@ -14,11 +15,10 @@ export default function Header() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
-    return null;
-  }
+  const isAdminOrLogin = pathname.startsWith("/admin") || pathname.startsWith("/login");
 
   useEffect(() => {
+    if (isAdminOrLogin) return;
     let ctx = gsap.context(() => {
       gsap.from(".header-inner-anim", {
         y: -100,
@@ -38,9 +38,10 @@ export default function Header() {
     }, headerRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [isAdminOrLogin]);
 
   useEffect(() => {
+    if (isAdminOrLogin) return;
     const handleScroll = () => {
       if (mobileMenuOpen) return;
       
@@ -65,7 +66,11 @@ export default function Header() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY, mobileMenuOpen]);
+  }, [lastScrollY, mobileMenuOpen, isAdminOrLogin]);
+
+  if (isAdminOrLogin) {
+    return null;
+  }
 
   const navItems = [
     { label: "BERANDA", href: "/" },
@@ -104,29 +109,30 @@ export default function Header() {
   return (
     <header
       ref={headerRef}
-      className={`fixed top-0 left-0 w-full z-50 px-4 md:px-8 pt-4 pb-0 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] transform ${
+      className={`fixed top-0 left-0 w-full z-50 px-4 md:px-8 pt-6 pb-0 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] transform ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       }`}
     >
-      <div className="header-inner-anim max-w-7xl mx-auto bg-canvas rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] pointer-events-auto border border-gray-100/50">
-        <div className="flex items-center justify-between px-6 md:px-8 py-5">
+      <div className="header-inner-anim max-w-7xl mx-auto bg-canvas/90 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] pointer-events-auto border border-gray-100/50">
+        <div className="flex items-center justify-between px-6 md:px-8 py-3.5">
           {/* Logo - Enlarged and easily replaceable */}
-          <Link href="/" className="flex items-center gap-4 group link-hover">
+          <Link href="/" className="flex items-center gap-3 group link-hover">
             {/* Ganti src="/logo-instansi.png" dengan path logo yang sesungguhnya di folder /public */}
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary flex flex-shrink-0 items-center justify-center text-white overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-300">
-              <img 
-                src="https://ui-avatars.com/api/?name=BKN&background=1e3a8a&color=fff&size=128&bold=true" 
+            <div className="w-12 h-12 md:w-14 md:h-14 flex flex-shrink-0 items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300 relative">
+              <Image 
+                src="/logo-bkn.png" 
                 alt="Logo UPT BKN" 
-                className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'block'; }}
+                fill
+                sizes="56px"
+                className="object-contain"
+                priority
               />
-              <Building2 className="w-8 h-8 hidden" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-primary tracking-tight leading-none text-xl md:text-2xl">
+              <span className="font-bold text-primary tracking-tight leading-none text-lg md:text-xl">
                 UPT BKN
               </span>
-              <span className="font-semibold text-accent tracking-tight leading-none text-base md:text-lg">
+              <span className="font-semibold text-accent tracking-tight leading-none text-sm md:text-base mt-0.5">
                 TARAKAN
               </span>
             </div>

@@ -1,29 +1,24 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Calendar, ArrowRight, FileImage } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
-export default function BeritaPage() {
-  const [posts, setPosts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const revalidate = 60; // ISR 
 
-  useEffect(() => {
-    const fetchBerita = async () => {
-      const { data } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('status', 'publish')
-        .eq('category', 'berita')
-        .order('created_at', { ascending: false });
-      
-      setPosts(data || []);
-      setIsLoading(false);
-    };
-
-    fetchBerita();
-  }, []);
+export default async function BeritaPage() {
+  let posts = [];
+  try {
+    const { data } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('status', 'publish')
+      .eq('category', 'berita')
+      .order('created_at', { ascending: false });
+    
+    posts = data || [];
+  } catch (error) {
+    console.error("Error fetching berita:", error);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 animate-in fade-in duration-500">
@@ -36,11 +31,7 @@ export default function BeritaPage() {
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : posts.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="bg-surface-card rounded-[3rem] p-8 md:p-16 min-h-[40vh] flex flex-col items-center justify-center text-center shadow-sm">
           <h2 className="text-2xl font-bold text-ink mb-2">Belum ada berita</h2>
           <p className="text-mute">Berita yang diterbitkan akan tampil di sini.</p>
@@ -52,10 +43,12 @@ export default function BeritaPage() {
               <div className="bg-surface-card rounded-[2rem] overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300 border border-gray-100/50 h-full">
                 <div className="aspect-[4/3] relative bg-gray-100 flex items-center justify-center">
                   {post.image_url ? (
-                    <img 
+                    <Image 
                       src={post.image_url} 
                       alt={post.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="absolute inset-0 object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   ) : (
                     <FileImage className="w-12 h-12 text-gray-300" />

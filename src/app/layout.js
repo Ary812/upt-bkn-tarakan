@@ -52,7 +52,7 @@ export default function RootLayout({ children }) {
           </svg>
 
           <Header />
-          <main className="flex-1 pt-24 pb-16">
+          <main className="flex-1 pt-32 pb-16">
             {children}
           </main>
           <Footer />

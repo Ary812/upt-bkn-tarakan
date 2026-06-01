@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   title text NOT NULL,
   content text NOT NULL,
-  category text NOT NULL CHECK (category IN ('berita', 'pengumuman')),
+  category text NOT NULL, -- CONSTRAINT CHECK DIHAPUS agar bisa menambah kategori Profil & Layanan
   image_url text,
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'publish')),
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL

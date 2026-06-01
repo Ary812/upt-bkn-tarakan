@@ -2,6 +2,7 @@
 
 import { MapPin, Link as LinkIcon, Mail, Phone } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export default function Footer() {
@@ -19,15 +20,15 @@ export default function Footer() {
           {/* Brand & Address */}
           <div className="lg:col-span-5 space-y-4">
             <Link href="/" className="flex items-center gap-3 group link-hover">
-              <div className="w-12 h-12 rounded-full bg-primary flex flex-shrink-0 items-center justify-center text-white overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-300">
-                <img 
-                  src="https://ui-avatars.com/api/?name=BKN&background=1e3a8a&color=fff&size=128&bold=true" 
-                  alt="Logo UPT BKN" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'block'; }}
-                />
-                <span className="font-bold text-xl hidden">B</span>
-              </div>
+            <div className="w-12 h-12 flex flex-shrink-0 items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300 relative">
+              <Image 
+                src="/logo-bkn.png" 
+                alt="Logo UPT BKN" 
+                fill
+                sizes="48px"
+                className="object-contain"
+              />
+            </div>
               <div className="flex flex-col">
                 <span className="font-bold text-primary tracking-tight leading-none text-xl">
                   UPT BKN
@@ -88,6 +89,12 @@ export default function Footer() {
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
                   </div>
                   <span className="text-xs font-medium">@bkntarakan</span>
+                </a>
+                <a href="https://www.youtube.com/@uptbkntarakan" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-mute hover:text-primary transition-colors group">
+                  <div className="w-7 h-7 rounded-full bg-canvas flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform flex-shrink-0">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="var(--canvas, #ffffff)"/></svg>
+                  </div>
+                  <span className="text-xs font-medium">@uptbkntarakan</span>
                 </a>
               </div>
             </div>

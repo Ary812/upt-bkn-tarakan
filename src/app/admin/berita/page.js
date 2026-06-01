@@ -6,7 +6,14 @@ import { supabase } from "@/lib/supabase";
 import { getAdminPosts, createPost, updatePost, deletePost, uploadImageAction } from "@/lib/actions";
 import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, X, UploadCloud, FileImage } from "lucide-react";
+import { Plus, Edit2, Trash2, X, UploadCloud, FileImage, Eye } from "lucide-react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-100 h-64 rounded-xl w-full border border-gray-200 flex items-center justify-center text-sm font-medium text-mute">Memuat Editor...</div>
+});
 
 export default function ManajemenBeritaPage() {
   const pageRef = useRef(null);
@@ -203,10 +210,18 @@ export default function ManajemenBeritaPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => handleOpenModal(post)} className="p-2 text-mute hover:text-primary bg-surface-soft hover:bg-primary/10 rounded-xl transition-colors">
+                        <Link 
+                          href={`/publikasi/berita/${post.id}`} 
+                          target="_blank"
+                          className="p-2 text-mute hover:text-blue-600 bg-surface-soft hover:bg-blue-50 rounded-xl transition-colors"
+                          title="Preview"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <button onClick={() => handleOpenModal(post)} className="p-2 text-mute hover:text-primary bg-surface-soft hover:bg-primary/10 rounded-xl transition-colors" title="Edit">
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(post.id)} className="p-2 text-mute hover:text-accent bg-surface-soft hover:bg-accent/10 rounded-xl transition-colors">
+                        <button onClick={() => handleDelete(post.id)} className="p-2 text-mute hover:text-accent bg-surface-soft hover:bg-accent/10 rounded-xl transition-colors" title="Hapus">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -246,12 +261,9 @@ export default function ManajemenBeritaPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-ink-soft mb-2">Konten Berita</label>
-                <textarea 
-                  required
-                  rows={6}
+                <RichTextEditor 
                   value={formData.content}
-                  onChange={e => setFormData({...formData, content: e.target.value})}
-                  className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none"
+                  onChange={(val) => setFormData({...formData, content: val})}
                   placeholder="Ketik konten berita di sini..."
                 />
               </div>

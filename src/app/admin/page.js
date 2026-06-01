@@ -10,7 +10,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     berita: 0,
     pengumuman: 0,
-    galeri: 0
+    views: 0
   });
 
   useEffect(() => {
@@ -19,12 +19,15 @@ export default function AdminDashboardPage() {
       try {
         const { count: countBerita } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('category', 'berita');
         const { count: countPengumuman } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('category', 'pengumuman');
-        const { count: countGaleri } = await supabase.from('galleries').select('*', { count: 'exact', head: true });
+        
+        // Fetch all views and sum them up
+        const { data: postsData } = await supabase.from('posts').select('views');
+        const totalViews = postsData ? postsData.reduce((acc, curr) => acc + (curr.views || 0), 0) : 0;
         
         setStats({
           berita: countBerita || 0,
           pengumuman: countPengumuman || 0,
-          galeri: countGaleri || 0
+          views: totalViews
         });
       } catch (err) {
         console.error("Failed to fetch stats", err);
@@ -50,7 +53,7 @@ export default function AdminDashboardPage() {
   const statItems = [
     { label: "Total Berita", value: stats.berita, icon: Newspaper, color: "text-blue-500", bg: "bg-blue-50" },
     { label: "Total Pengumuman", value: stats.pengumuman, icon: Megaphone, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { label: "Total Galeri", value: stats.galeri, icon: ImageIcon, color: "text-amber-500", bg: "bg-amber-50" },
+    { label: "Total Penonton (Views)", value: stats.views, icon: Sparkles, color: "text-purple-500", bg: "bg-purple-50" },
   ];
 
   return (
@@ -64,7 +67,7 @@ export default function AdminDashboardPage() {
           Ringkasan Konten
         </h1>
         <p className="text-mute mt-2 stat-card">
-          Kelola berita, pengumuman, dan dokumentasi galeri UPT BKN Tarakan dengan mudah melalui portal ini.
+          Kelola berita, pengumuman, dan pantau statistik pengunjung situs UPT BKN Tarakan dengan mudah melalui portal ini.
         </p>
       </div>
 

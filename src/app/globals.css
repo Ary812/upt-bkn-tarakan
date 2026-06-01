@@ -55,3 +55,14 @@
     transform: translateY(-1px);
   }
 }
+
+/* ==========================================
+ * SunEditor Frontend Parity Classes
+ * ========================================== */
+
+/* Override Prose for inline styles */
+.prose img {
+  margin-top: unset;
+  margin-bottom: unset;
+}
+
