@@ -109,7 +109,7 @@ export default async function PublikasiDetailPage({ params }) {
           {/* Post Content */}
           <div className="p-8 md:p-12 lg:p-16 pt-12">
             <div 
-              className="prose prose-lg md:prose-xl max-w-none prose-img:rounded-3xl prose-img:shadow-md prose-headings:text-ink prose-p:text-mute prose-a:text-primary hover:prose-a:text-primary-pressed transition-all"
+              className="sun-editor-editable transition-all"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
             />
           </div>

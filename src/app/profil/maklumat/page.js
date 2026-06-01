@@ -25,7 +25,7 @@ export default async function MaklumatPelayananPage() {
           
           {data ? (
             <div 
-              className="prose prose-lg md:prose-xl max-w-none prose-img:rounded-3xl prose-img:shadow-md prose-headings:text-ink prose-p:text-mute prose-a:text-primary hover:prose-a:text-primary-pressed transition-all relative z-10"
+              className="sun-editor-editable transition-all relative z-10"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.content) }}
             />
         ) : (

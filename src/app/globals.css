@@ -1,3 +1,4 @@
+@import 'suneditor/src/assets/suneditor-contents.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60,9 +61,14 @@
  * SunEditor Frontend Parity Classes
  * ========================================== */
 
-/* Override Prose for inline styles */
-.prose img {
-  margin-top: unset;
-  margin-bottom: unset;
+.sun-editor-editable {
+  font-family: inherit !important;
+  color: inherit !important;
+  background-color: transparent !important;
+  padding: 0 !important;
 }
 
+.sun-editor-editable img {
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
