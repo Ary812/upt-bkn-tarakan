@@ -8,12 +8,7 @@ import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import { Plus, Edit2, Trash2, X, UploadCloud, FileImage, Eye } from "lucide-react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), {
-  ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-100 h-64 rounded-xl w-full border border-gray-200 flex items-center justify-center text-sm font-medium text-mute">Memuat Editor...</div>
-});
+import RichTextEditor from "@/components/RichTextEditor";
 
 export default function ManajemenPengumumanPage() {
   const pageRef = useRef(null);

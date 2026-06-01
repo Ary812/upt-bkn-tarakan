@@ -4,12 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 import { getAdminPosts, createPost, updatePost } from "@/lib/actions";
 import { toast } from "sonner";
-import dynamic from "next/dynamic";
-
-const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { 
-  ssr: false, 
-  loading: () => <div className="animate-pulse bg-gray-100 h-64 rounded-xl w-full border border-gray-200 flex items-center justify-center text-sm font-medium text-mute">Memuat Editor...</div> 
-});
+import RichTextEditor from "@/components/RichTextEditor";
 import { Save } from "lucide-react";
 
 export default function SingleContentEditor({ title, category, description }) {

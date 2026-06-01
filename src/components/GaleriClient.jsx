@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Image as ImageIcon, Maximize2 } from "lucide-react";
-import dynamic from "next/dynamic";
-
-const LightboxModal = dynamic(() => import("@/components/LightboxModal"), { ssr: false });
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import "yet-another-react-lightbox/styles.css";
 
 export default function GaleriClient({ galleries }) {
   const [index, setIndex] = useState(-1);
@@ -79,14 +79,26 @@ export default function GaleriClient({ galleries }) {
       )}
 
       {/* Lightbox Modal */}
-      {index >= 0 && (
-        <LightboxModal
-          open={index >= 0}
-          close={() => setIndex(-1)}
-          index={index}
-          slides={slides}
-        />
-      )}
+      <Lightbox
+        open={index >= 0}
+        close={() => setIndex(-1)}
+        index={index}
+        slides={slides}
+        plugins={[Zoom]}
+        zoom={{
+          maxZoomPixelRatio: 3,
+          zoomInMultiplier: 2,
+        }}
+        render={{
+          slideHeader: () => null,
+          slideFooter: ({ slide }) => (
+            <div className="bg-black/50 backdrop-blur-md p-4 text-white w-full absolute bottom-0 left-0">
+              <p className="font-bold text-lg mb-1">{slide.title}</p>
+              <p className="text-sm text-white/80">{slide.description}</p>
+            </div>
+          )
+        }}
+      />
     </div>
   );
 }

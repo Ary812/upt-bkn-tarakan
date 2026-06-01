@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const getSupabaseAdmin = () => {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not defined in server environment. Supabase Admin client cannot be initialized.");
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not defined. Secure operations cannot proceed.");
   }
   return createClient(supabaseUrl, serviceRoleKey);
 };

@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isProtectedRoute = createRouteMatcher(["/berkas-kantor(.*)", "/admin(.*)"]);
 
@@ -14,4 +14,4 @@ export const config = {
     '/(api|trpc)(.*)',
     '/__clerk/(.*)',
   ],
-};
+}

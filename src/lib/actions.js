@@ -2,101 +2,74 @@
 
 import { getSupabaseAdmin } from "./supabase";
 import { revalidatePath } from "next/cache";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
-import sanitizeHtml from "sanitize-html";
 
 // ==========================================
-// SECURITY & AUTH CHECK HELPER
+// AUTHENTICATION & VALIDATION
 // ==========================================
+
 async function requireAdmin() {
   const { userId } = await auth();
   if (!userId) {
-    throw new Error("Unauthorized: Sesi Anda telah berakhir, silakan login kembali.");
+    throw new Error("Unauthorized: Please log in");
   }
-
-  const user = await currentUser();
-  if (!user) {
-    throw new Error("Unauthorized: Pengguna tidak valid.");
-  }
-
+  
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
   const email = user.emailAddresses[0]?.emailAddress;
   const adminEmail = process.env.ADMIN_EMAIL;
-
-  if (!adminEmail || email !== adminEmail) {
-    throw new Error("Unauthorized: Anda tidak memiliki akses admin.");
+  
+  if (adminEmail && email !== adminEmail) {
+    throw new Error("Unauthorized: Admin access required");
   }
 }
 
-// ==========================================
-// HTML SANITIZATION HELPER
-// ==========================================
-function sanitizeRichText(html) {
-  if (!html) return "";
-  return sanitizeHtml(html, {
-    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-      "h1", "h2", "h3", "h4", "h5", "h6", "img", "iframe", "u", "s", "span", "hr"
-    ]),
-    allowedAttributes: {
-      ...sanitizeHtml.defaults.allowedAttributes,
-      "*": ["style", "class", "id"],
-      "a": ["href", "name", "target", "rel"],
-      "img": ["src", "alt", "width", "height", "loading"],
-      "iframe": ["src", "width", "height", "frameborder", "allowfullscreen"]
-    },
-    allowedSchemes: ["http", "https", "mailto", "tel", "data"],
-    allowedIframeHostnames: ["www.youtube.com", "youtube.com", "player.vimeo.com"]
-  });
-}
-
-// ==========================================
-// INPUT VALIDATION SCHEMAS
-// ==========================================
 const postSchema = z.object({
-  title: z.string({ required_error: "Judul wajib diisi" })
-    .min(3, "Judul minimal 3 karakter")
-    .max(200, "Judul maksimal 200 karakter"),
-  content: z.string({ required_error: "Konten wajib diisi" })
-    .min(10, "Konten minimal 10 karakter"),
-  category: z.enum(["berita", "pengumuman", "profil", "layanan"], { 
-    errorMap: () => ({ message: "Kategori tidak valid" }) 
+  title: z.string().min(1, "Title is required").max(300, "Title is too long"),
+  content: z.string().min(1, "Content is required"),
+  category: z.enum([
+    "berita", "pengumuman", "sejarah", 
+    "tugas-fungsi", "struktur-organisasi", "maklumat", "layanan"
+  ], {
+    errorMap: () => ({ message: "Invalid category" })
   }),
-  status: z.enum(["draft", "publish"], { 
-    errorMap: () => ({ message: "Status tidak valid" }) 
-  }),
-  image_url: z.string().url("Format URL gambar tidak valid").nullable().optional()
+  status: z.enum(["draft", "publish"]),
+  image_url: z.string().url().optional().or(z.literal("")).or(z.null()),
 });
 
 const gallerySchema = z.object({
-  caption: z.string({ required_error: "Keterangan wajib diisi" })
-    .min(3, "Keterangan minimal 3 karakter")
-    .max(500, "Keterangan maksimal 500 karakter"),
-  image_url: z.string({ required_error: "Gambar wajib diunggah" })
-    .url("Format URL gambar tidak valid")
+  caption: z.string().min(1, "Caption is required").max(500, "Caption is too long"),
+  image_url: z.string().url().optional().or(z.literal("")).or(z.null()),
 });
 
+// Helper to safely format Supabase errors
+function handleDbError(error) {
+  console.error("Database Error:", error);
+  throw new Error("Terjadi kesalahan pada database. Silakan coba lagi.");
+}
+
 // ==========================================
-// STORAGE UPLOAD (Secure)
+// STORAGE UPLOAD (Secure Server Action)
 // ==========================================
 export async function uploadImageAction(formData) {
-  // Ensure only authenticated admin can upload files
   await requireAdmin();
 
   const file = formData.get("file");
-  if (!file) throw new Error("Berkas gambar tidak ditemukan");
-
-  // Validate file type
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error("Tipe berkas tidak didukung. Harap unggah gambar (JPEG, PNG, GIF, WEBP).");
+  if (!file || !(file instanceof File)) {
+    throw new Error("File not found or invalid");
   }
 
-  // Validate file size (max 2MB limit)
-  if (file.size > 2 * 1024 * 1024) {
-    throw new Error("Ukuran file terlalu besar. Maksimal ukuran file adalah 2MB.");
+  // Basic validation for image upload
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are allowed");
   }
 
-  const fileExt = file.name.split('.').pop();
+  const fileExt = file.name.split('.').pop()?.toLowerCase();
+  if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fileExt)) {
+     throw new Error("Invalid image format");
+  }
+
   const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
   const filePath = `uploads/${fileName}`;
 
@@ -109,7 +82,7 @@ export async function uploadImageAction(formData) {
     });
 
   if (error) {
-    throw new Error(error.message);
+    handleDbError(error);
   }
 
   const { data: { publicUrl } } = supabase.storage
@@ -120,12 +93,11 @@ export async function uploadImageAction(formData) {
 }
 
 // ==========================================
-// POSTS (Berita, Pengumuman & Profil Pages)
+// POSTS (Berita, Pengumuman, Profil, Layanan)
 // ==========================================
 
 export async function getAdminPosts(category) {
   await requireAdmin();
-
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("posts")
@@ -133,51 +105,38 @@ export async function getAdminPosts(category) {
     .eq("category", category)
     .order("created_at", { ascending: false });
   
-  if (error) throw new Error(error.message);
+  if (error) handleDbError(error);
   return data;
 }
 
 export async function createPost(formData) {
   await requireAdmin();
 
-  const rawData = {
+  // Validate inputs
+  const parsedData = postSchema.safeParse({
     title: formData.get("title"),
     content: formData.get("content"),
     category: formData.get("category"),
     status: formData.get("status"),
-    image_url: formData.get("image_url") || null
-  };
+    image_url: formData.get("image_url")
+  });
 
-  // Perform backend schema validation using Zod
-  const result = postSchema.safeParse(rawData);
-  if (!result.success) {
-    const errorMessages = result.error.errors.map(err => err.message).join(", ");
-    throw new Error(`Validasi Gagal: ${errorMessages}`);
+  if (!parsedData.success) {
+    throw new Error(parsedData.error.errors[0].message);
   }
 
-  const validatedData = result.data;
-
-  // Sanitize potentially unsafe HTML from the rich text editor before writing to the database
-  const sanitizedContent = sanitizeRichText(validatedData.content);
+  const { title, content, category, status, image_url } = parsedData.data;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("posts")
-    .insert([{
-      title: validatedData.title,
-      content: sanitizedContent,
-      category: validatedData.category,
-      status: validatedData.status,
-      image_url: validatedData.image_url || null
-    }])
+    .insert([{ title, content, category, image_url, status }])
     .select();
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) handleDbError(error);
 
   revalidatePath("/");
-  revalidatePath(`/publikasi/${validatedData.category}`);
+  revalidatePath(`/publikasi/${category}`);
   revalidatePath("/admin");
   return data;
 }
@@ -185,37 +144,23 @@ export async function createPost(formData) {
 export async function updatePost(id, formData) {
   await requireAdmin();
 
-  if (!id) throw new Error("ID post tidak valid.");
-
-  const rawData = {
+  const parsedData = postSchema.safeParse({
     title: formData.get("title"),
     content: formData.get("content"),
     category: formData.get("category"),
     status: formData.get("status"),
-    image_url: formData.get("image_url") || null
-  };
+    image_url: formData.get("image_url")
+  });
 
-  // Perform backend schema validation using Zod
-  const result = postSchema.safeParse(rawData);
-  if (!result.success) {
-    const errorMessages = result.error.errors.map(err => err.message).join(", ");
-    throw new Error(`Validasi Gagal: ${errorMessages}`);
+  if (!parsedData.success) {
+    throw new Error(parsedData.error.errors[0].message);
   }
 
-  const validatedData = result.data;
+  const { title, content, category, status, image_url } = parsedData.data;
 
-  // Sanitize rich text input
-  const sanitizedContent = sanitizeRichText(validatedData.content);
-
-  const updateData = {
-    title: validatedData.title,
-    content: sanitizedContent,
-    category: validatedData.category,
-    status: validatedData.status,
-  };
-  
-  if (validatedData.image_url !== undefined) {
-    updateData.image_url = validatedData.image_url;
+  const updateData = { title, content, category, status };
+  if (image_url !== undefined && image_url !== null) {
+    updateData.image_url = image_url;
   }
 
   const supabase = getSupabaseAdmin();
@@ -225,27 +170,27 @@ export async function updatePost(id, formData) {
     .eq("id", id)
     .select();
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) handleDbError(error);
 
   revalidatePath("/");
-  revalidatePath(`/publikasi/${validatedData.category}`);
+  revalidatePath(`/publikasi/${category}`);
   revalidatePath("/admin");
   return data;
 }
 
 export async function deletePost(id) {
   await requireAdmin();
-
-  if (!id) throw new Error("ID post tidak valid.");
+  
+  // Basic validation that ID is a UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    throw new Error("Invalid post ID");
+  }
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("posts").delete().eq("id", id);
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) handleDbError(error);
 
   revalidatePath("/");
   revalidatePath("/publikasi/berita");
@@ -260,45 +205,37 @@ export async function deletePost(id) {
 
 export async function getAdminGalleries() {
   await requireAdmin();
-
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("galleries")
     .select("*")
     .order("created_at", { ascending: false });
   
-  if (error) throw new Error(error.message);
+  if (error) handleDbError(error);
   return data;
 }
 
 export async function createGallery(formData) {
   await requireAdmin();
 
-  const rawData = {
+  const parsedData = gallerySchema.safeParse({
     caption: formData.get("caption"),
     image_url: formData.get("image_url")
-  };
+  });
 
-  const result = gallerySchema.safeParse(rawData);
-  if (!result.success) {
-    const errorMessages = result.error.errors.map(err => err.message).join(", ");
-    throw new Error(`Validasi Gagal: ${errorMessages}`);
+  if (!parsedData.success) {
+    throw new Error(parsedData.error.errors[0].message);
   }
 
-  const validatedData = result.data;
+  const { caption, image_url } = parsedData.data;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("galleries")
-    .insert([{
-      caption: validatedData.caption,
-      image_url: validatedData.image_url
-    }])
+    .insert([{ caption, image_url }])
     .select();
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) handleDbError(error);
 
   revalidatePath("/publikasi/galeri");
   revalidatePath("/admin");
@@ -308,34 +245,30 @@ export async function createGallery(formData) {
 export async function updateGallery(id, formData) {
   await requireAdmin();
 
-  if (!id) throw new Error("ID galeri tidak valid.");
-
-  const rawData = {
+  const parsedData = gallerySchema.safeParse({
     caption: formData.get("caption"),
     image_url: formData.get("image_url")
-  };
+  });
 
-  const result = gallerySchema.safeParse(rawData);
-  if (!result.success) {
-    const errorMessages = result.error.errors.map(err => err.message).join(", ");
-    throw new Error(`Validasi Gagal: ${errorMessages}`);
+  if (!parsedData.success) {
+    throw new Error(parsedData.error.errors[0].message);
   }
 
-  const validatedData = result.data;
+  const { caption, image_url } = parsedData.data;
+
+  const updateData = { caption };
+  if (image_url !== undefined && image_url !== null) {
+    updateData.image_url = image_url;
+  }
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("galleries")
-    .update({
-      caption: validatedData.caption,
-      image_url: validatedData.image_url
-    })
+    .update(updateData)
     .eq("id", id)
     .select();
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) handleDbError(error);
 
   revalidatePath("/publikasi/galeri");
   revalidatePath("/admin");
@@ -345,14 +278,15 @@ export async function updateGallery(id, formData) {
 export async function deleteGallery(id) {
   await requireAdmin();
 
-  if (!id) throw new Error("ID galeri tidak valid.");
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    throw new Error("Invalid gallery ID");
+  }
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("galleries").delete().eq("id", id);
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) handleDbError(error);
 
   revalidatePath("/publikasi/galeri");
   revalidatePath("/admin");

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { 
   LayoutDashboard, 
@@ -10,13 +10,20 @@ import {
   Image as ImageIcon, 
   Menu,
   X,
-  Building2
+  LogOut,
+  Building2,
+  BookOpen,
+  Briefcase,
+  Users,
+  ShieldCheck,
+  HeartHandshake
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 
-export default function AdminLayoutClient({ children }) {
+export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoaded } = useUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -34,6 +41,14 @@ export default function AdminLayoutClient({ children }) {
     { name: "Berita", href: "/admin/berita", icon: Newspaper },
     { name: "Pengumuman", href: "/admin/pengumuman", icon: Megaphone },
     { name: "Galeri", href: "/admin/galeri", icon: ImageIcon },
+  ];
+
+  const profileItems = [
+    { name: "Sejarah", href: "/admin/profil/sejarah", icon: BookOpen },
+    { name: "Tugas & Fungsi", href: "/admin/profil/tugas-fungsi", icon: Briefcase },
+    { name: "Struktur Organisasi", href: "/admin/profil/struktur-organisasi", icon: Users },
+    { name: "Maklumat Pelayanan", href: "/admin/profil/maklumat", icon: ShieldCheck },
+    { name: "Layanan", href: "/admin/layanan", icon: HeartHandshake },
   ];
 
   const SidebarContent = () => (
@@ -61,6 +76,29 @@ export default function AdminLayoutClient({ children }) {
           Manajemen Konten
         </p>
         {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                isActive 
+                  ? "bg-primary text-white font-semibold shadow-md shadow-primary/20" 
+                  : "text-mute hover:bg-surface-soft hover:text-ink font-medium"
+              }`}
+            >
+              <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
+              {item.name}
+            </Link>
+          );
+        })}
+
+        <p className="px-4 text-xs font-bold text-mute uppercase tracking-wider mb-4 mt-6">
+          Profil & Layanan
+        </p>
+        {profileItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
@@ -127,7 +165,7 @@ export default function AdminLayoutClient({ children }) {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="font-bold text-lg text-ink hidden sm:block">
-              {navItems.find(item => item.href === pathname)?.name || "Dashboard"}
+              {[...navItems, ...profileItems].find(item => item.href === pathname)?.name || "Dashboard"}
             </h1>
           </div>
 
