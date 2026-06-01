@@ -90,7 +90,7 @@ export default function NewsGrid({ latestNews }) {
                       {news.title}
                     </h3>
                     <p className="text-mute text-base leading-relaxed mb-8 flex-1 line-clamp-3">
-                      {news.content.substring(0, 150)}...
+                      {news.content.replace(/<[^>]*>?/gm, '').substring(0, 150)}...
                     </p>
                     <div className="mt-auto flex items-center justify-between">
                       <span className="text-sm font-bold text-primary link-hover uppercase tracking-wider">Baca Selengkapnya</span>

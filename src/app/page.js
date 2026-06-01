@@ -34,7 +34,7 @@ export default async function Home() {
       heroSlides = heroRes.map(post => ({
         id: post.id,
         title: post.title,
-        excerpt: post.content.substring(0, 150) + "...",
+        excerpt: post.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + "...",
         image: post.image_url || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1600",
         href: `/publikasi/${post.category}/${post.id}`,
         category: post.category

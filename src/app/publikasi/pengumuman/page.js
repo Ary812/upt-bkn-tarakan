@@ -65,7 +65,7 @@ export default async function PengumumanPage() {
                     {post.title}
                   </h3>
                   <p className="text-mute text-sm leading-relaxed mb-6 flex-1 line-clamp-3">
-                    {post.content}
+                    {post.content.replace(/<[^>]*>?/gm, '').substring(0, 150)}...
                   </p>
                   <div className="mt-auto flex items-center justify-between">
                     <span className="text-sm font-bold text-primary link-hover">Baca Selengkapnya</span>
