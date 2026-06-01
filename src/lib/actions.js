@@ -56,30 +56,51 @@ export async function uploadImageAction(formData) {
   await requireAdmin();
 
   const file = formData.get("file");
-  if (!file || typeof file !== "object" || !('name' in file)) {
+  if (!file || typeof file !== "object") {
     throw new Error("File not found or invalid");
   }
 
-  // Basic validation for image upload
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Only image files are allowed");
-  }
+  // Map MIME type → file extension (more reliable than parsing .name on Vercel)
+  const mimeToExt = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/avif": "avif",
+  };
 
-  const fileNameProperty = file.name || "image.jpeg";
-  const fileExt = fileNameProperty.split('.').pop()?.toLowerCase() || 'jpeg';
-  if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fileExt)) {
-     throw new Error("Invalid image format");
+  const mimeType = file.type || "";
+  const fileExt = mimeToExt[mimeType];
+
+  if (!fileExt) {
+    // Fallback: try to derive ext from name only if MIME is missing/unknown
+    const fallbackName = (file.name || "").toLowerCase();
+    const fallbackExt = fallbackName.split(".").pop();
+    const allowedExts = ["jpg", "jpeg", "png", "webp", "gif", "avif"];
+    if (!allowedExts.includes(fallbackExt)) {
+      throw new Error("Only image files are allowed (jpg, png, webp, gif)");
+    }
+    // Use fallbackExt
+    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fallbackExt}`;
+    const filePath = `uploads/${fileName}`;
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.storage.from("public-images").upload(filePath, file, { cacheControl: "3600", upsert: false });
+    if (error) handleDbError(error);
+    const { data: { publicUrl } } = supabase.storage.from("public-images").getPublicUrl(filePath);
+    return publicUrl;
   }
 
   const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
   const filePath = `uploads/${fileName}`;
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('public-images')
     .upload(filePath, file, {
       cacheControl: '3600',
-      upsert: false
+      upsert: false,
+      contentType: mimeType,
     });
 
   if (error) {

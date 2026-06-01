@@ -102,10 +102,14 @@ export default function ManajemenBeritaPage() {
           maxWidthOrHeight: 1200,
           useWebWorker: true
         };
-        const compressedFile = await imageCompression(formData.imageFile, options);
+        const compressedBlob = await imageCompression(formData.imageFile, options);
+        // Reconstruct File to preserve .type on Vercel
+        const mimeType = compressedBlob.type || formData.imageFile.type || "image/jpeg";
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+        const safeFile = new File([compressedBlob], `upload_${Date.now()}.${ext}`, { type: mimeType });
         
         const uploadData = new FormData();
-        uploadData.append("file", compressedFile);
+        uploadData.append("file", safeFile);
         finalImageUrl = await uploadImageAction(uploadData);
       }
 

@@ -45,26 +45,32 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
           onImageUploadBefore: (params) => {
             (async () => {
               try {
-                const file = params.info.files[0];
-                if (!file) return;
+                const originalFile = params.info.files[0];
+                if (!originalFile) return;
                 
                 const toastId = toast.loading("Mengunggah gambar...");
                 
                 const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true };
-                const compressedFile = await imageCompression(file, options);
+                const compressedBlob = await imageCompression(originalFile, options);
+
+                // Explicitly reconstruct a File to preserve .name and .type after compression
+                const mimeType = compressedBlob.type || originalFile.type || "image/jpeg";
+                const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+                const safeName = `upload_${Date.now()}.${ext}`;
+                const safeFile = new File([compressedBlob], safeName, { type: mimeType });
                 
                 const formData = new FormData();
-                formData.append('file', compressedFile);
+                formData.append('file', safeFile);
                 
                 const url = await uploadImageAction(formData);
                 
                 toast.success("Gambar berhasil ditambahkan!", { id: toastId });
                 
                 // Manually insert the image into the editor since we hijacked the upload
-                params.$.html.insert(`<img src="${url}" alt="${file.name}" style="max-width: 100%;" />`);
+                params.$.html.insert(`<img src="${url}" alt="${safeName}" style="max-width: 100%;" />`);
                 
               } catch (err) {
-                toast.error("Gagal mengunggah gambar.");
+                toast.error(`Gagal mengunggah gambar: ${err.message || 'Coba lagi.'}`);
               }
             })();
             return false; // Stop default process
