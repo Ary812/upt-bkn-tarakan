@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "./supabase";
 import { revalidatePath } from "next/cache";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
+import { sanitizeContent } from "./sanitize";
 
 // ==========================================
 // AUTHENTICATION & VALIDATION
@@ -149,10 +150,12 @@ export async function createPost(formData) {
 
   const { title, content, category, status, image_url } = parsedData.data;
 
+  const sanitizedContent = sanitizeContent(content);
+
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("posts")
-    .insert([{ title, content, category, image_url, status }])
+    .insert([{ title, content: sanitizedContent, category, image_url, status }])
     .select();
 
   if (error) handleDbError(error);
@@ -180,7 +183,9 @@ export async function updatePost(id, formData) {
 
   const { title, content, category, status, image_url } = parsedData.data;
 
-  const updateData = { title, content, category, status };
+  const sanitizedContent = sanitizeContent(content);
+
+  const updateData = { title, content: sanitizedContent, category, status };
   if (image_url !== undefined && image_url !== null) {
     updateData.image_url = image_url;
   }
@@ -313,4 +318,57 @@ export async function deleteGallery(id) {
   revalidatePath("/publikasi/galeri");
   revalidatePath("/admin");
   return true;
+}
+
+// ==========================================
+// STATS (Admin Dashboard)
+// ==========================================
+
+export async function getAdminStats() {
+  await requireAdmin();
+  const supabase = getSupabaseAdmin();
+  
+  try {
+    const { count: countBerita } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('category', 'berita');
+    const { count: countPengumuman } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('category', 'pengumuman');
+    
+    // Fetch all views and sum them up
+    const { data: postsData } = await supabase.from('posts').select('views');
+    const totalViews = postsData ? postsData.reduce((acc, curr) => acc + (curr.views || 0), 0) : 0;
+    
+    return {
+      berita: countBerita || 0,
+      pengumuman: countPengumuman || 0,
+      views: totalViews
+    };
+  } catch (error) {
+    handleDbError(error);
+  }
+}
+
+// ==========================================
+// PAGINATION
+// ==========================================
+
+export async function getPaginatedPosts(category, page, limit = 9) {
+  const supabase = getSupabaseAdmin(); 
+  
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('status', 'publish')
+      .eq('category', category)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+      
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching paginated posts", error);
+    return [];
+  }
 }

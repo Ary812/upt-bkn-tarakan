@@ -44,15 +44,14 @@ export default function GaleriClient({ galleries }) {
             >
               <div className="relative bg-gray-100 flex items-center justify-center overflow-hidden">
                 {item.image_url ? (
-                  // We don't know the exact aspect ratio dynamically without reading the image metadata,
-                  // so we use standard object-cover with a predefined height or let the container dictate.
-                  // For masonry, we typically need actual img tags or predefined heights. Let's use standard img for masonry reflow,
-                  // or Next Image with layout responsive if we had sizes. Since it's masonry, standard img is often easier to let it flow naturally.
-                  <img 
+                  <Image 
                     src={item.image_url} 
                     alt={item.caption}
-                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
+                    width={0}
+                    height={0}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    style={{ width: '100%', height: 'auto' }}
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 ) : (
                   <div className="aspect-square flex items-center justify-center">

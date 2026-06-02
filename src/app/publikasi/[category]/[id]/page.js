@@ -5,6 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import ViewCounter from "@/components/ViewCounter";
+import { sanitizeContent } from "@/lib/sanitize";
 
 export default async function PublikasiDetailPage({ params }) {
   const { category, id } = await params;
@@ -109,7 +110,7 @@ export default async function PublikasiDetailPage({ params }) {
           <div className="p-8 md:p-12 lg:p-16 pt-12">
             <div 
               className="sun-editor-editable transition-all"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeContent(post.content) }}
             />
           </div>
           

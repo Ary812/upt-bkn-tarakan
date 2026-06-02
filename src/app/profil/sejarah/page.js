@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { sanitizeContent } from "@/lib/sanitize";
 
 export const revalidate = 0; // Selalu ambil data terbaru (tanpa cache)
 
@@ -27,7 +28,7 @@ export default async function SejarahPage() {
           {data ? (
             <div 
               className="sun-editor-editable transition-all relative z-10"
-              dangerouslySetInnerHTML={{ __html: data.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeContent(data.content) }}
             />
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-12 relative z-10">

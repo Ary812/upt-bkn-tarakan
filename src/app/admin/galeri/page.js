@@ -7,6 +7,7 @@ import { getAdminGalleries, createGallery, updateGallery, deleteGallery, uploadI
 import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import { Plus, Edit2, Trash2, X, UploadCloud, Image as ImageIcon } from "lucide-react";
+import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 
 export default function ManajemenGaleriPage() {
   const pageRef = useRef(null);
@@ -14,6 +15,7 @@ export default function ManajemenGaleriPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, isDeleting: false });
   
   // Form State
   const [formData, setFormData] = useState({
@@ -132,15 +134,22 @@ export default function ManajemenGaleriPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (confirm("Apakah Anda yakin ingin menghapus foto galeri ini?")) {
-      try {
-        await deleteGallery(id);
-        toast.success("Foto galeri berhasil dihapus!");
-        fetchGalleries();
-      } catch (error) {
-        toast.error("Gagal menghapus galeri");
-      }
+  const handleDeleteClick = (id) => {
+    setDeleteModal({ isOpen: true, id, isDeleting: false });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.id) return;
+    
+    setDeleteModal(prev => ({ ...prev, isDeleting: true }));
+    try {
+      await deleteGallery(deleteModal.id);
+      toast.success("Foto galeri berhasil dihapus!");
+      fetchGalleries();
+    } catch (error) {
+      toast.error("Gagal menghapus galeri");
+    } finally {
+      setDeleteModal({ isOpen: false, id: null, isDeleting: false });
     }
   };
 
@@ -179,7 +188,7 @@ export default function ManajemenGaleriPage() {
                     <button onClick={() => handleOpenModal(item)} className="p-2 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white transition-colors">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-md rounded-full text-white transition-colors">
+                    <button onClick={() => handleDeleteClick(item.id)} className="p-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-md rounded-full text-white transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -269,6 +278,14 @@ export default function ManajemenGaleriPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal 
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, isDeleting: false })}
+        onConfirm={confirmDelete}
+        isLoading={deleteModal.isDeleting}
+      />
     </div>
   );
 }

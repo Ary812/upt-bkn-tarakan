@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Newspaper, Megaphone, Image as ImageIcon, Sparkles } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAdminStats } from "@/lib/actions";
 
 export default function AdminDashboardPage() {
   const pageRef = useRef(null);
@@ -17,18 +17,10 @@ export default function AdminDashboardPage() {
     // Fetch stats
     const fetchStats = async () => {
       try {
-        const { count: countBerita } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('category', 'berita');
-        const { count: countPengumuman } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('category', 'pengumuman');
-        
-        // Fetch all views and sum them up
-        const { data: postsData } = await supabase.from('posts').select('views');
-        const totalViews = postsData ? postsData.reduce((acc, curr) => acc + (curr.views || 0), 0) : 0;
-        
-        setStats({
-          berita: countBerita || 0,
-          pengumuman: countPengumuman || 0,
-          views: totalViews
-        });
+        const data = await getAdminStats();
+        if (data) {
+          setStats(data);
+        }
       } catch (err) {
         console.error("Failed to fetch stats", err);
       }
